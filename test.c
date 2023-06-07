@@ -4,7 +4,7 @@
 #include<unistd.h>
 #include <string.h>
 
-#define N 10
+#define N 2
 #define temporeq 0.750
 
 typedef struct _requisition_
@@ -46,12 +46,18 @@ void dispatcherRoutine(){
     Requisition* requisition;
     FILE *file;
     file = fopen("test.txt","r");
-    while(i<N){
-        sleep(temporeq);
-        requisition = readRequisitionFromCsv(file);
-        if(requisition == NULL) break;
+    while((requisition = readRequisitionFromCsv(file))!= NULL){
+        while(arrayOfThreads[i] == 1){
+            i++;
+            if(i>N){
+                sleep(1);
+                i=0;
+            }
+        }
         pthread_create(normalthread + i,NULL,(void*)normalThreadRoutine,requisition);
-        i++;
+        arrayOfThreads[i] = 1;
+        sleep(temporeq);
+        i=0;
     }
     fclose(file);
 }
