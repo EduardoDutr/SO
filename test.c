@@ -5,13 +5,14 @@
 #include <string.h>
 
 #define N 2
-#define temporeq 0.750
+#define temporeq 0.5
 
 typedef struct _requisition_
 {
     int quantity;
     int delay;
-
+    int* arrayOfThreads;
+    int i;
 }Requisition;
 
 void getPi(int quantity){
@@ -21,8 +22,10 @@ void normalThreadRoutine(Requisition* requisition){
     Requisition requisitionNormal;
     requisitionNormal.delay = requisition->delay;
     requisitionNormal.quantity = requisition->quantity;
-    getPi(requisitionNormal.quantity);
+    requisitionNormal.i = requisition->i;
+    getPi(requisitionNormal.i);
     sleep(requisitionNormal.delay);
+    requisition->arrayOfThreads[requisitionNormal.i] = 0;
 }
 
 Requisition* readRequisitionFromCsv(FILE* file){
@@ -37,11 +40,10 @@ Requisition* readRequisitionFromCsv(FILE* file){
     return requisition;
 }
 
-//todas as threads utilizam a mesma requisicao pois e um ponteiro
+//dar um jeito de setar o arrayOfThreads[i] para 0
 
-void dispatcherRoutine(){
+void dispatcherRoutine(int* arrayOfThreads){
     int i =0;
-    int arrayOfThreads[N];
     pthread_t normalthread[N];
     Requisition* requisition;
     FILE *file;
@@ -54,19 +56,24 @@ void dispatcherRoutine(){
                 i=0;
             }
         }
+        requisition->i = i;
+        requisition->arrayOfThreads = arrayOfThreads;
         pthread_create(normalthread + i,NULL,(void*)normalThreadRoutine,requisition);
         arrayOfThreads[i] = 1;
         sleep(temporeq);
         i=0;
     }
+    
     fclose(file);
 }
 
 
 //Dispatcher lera do Csv e buscara alguma thread para executar a funcao,
 int main(){
+    int* arrayOfThreads = (int*)malloc(sizeof(int)*N);
     pthread_t dispatcher;
-    pthread_create(&dispatcher,NULL,(void*)&dispatcherRoutine,NULL);
+    pthread_create(&dispatcher,NULL,(void*)&dispatcherRoutine,arrayOfThreads);
     pthread_join(dispatcher,NULL);
     return 0;
+    free(arrayOfThreads);
 }
