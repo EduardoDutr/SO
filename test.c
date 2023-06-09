@@ -26,17 +26,44 @@ typedef struct _threads_
 
 
 
-void getPi(int quantity){
-  printf("Quantity: %d\n", quantity);
+char* getPi(int quantity){
+  char* pi = (char*)malloc(sizeof(char)*quantity+3);
+  //quantity+3 pois consideramos '3' ',' e '\n'
+  sprintf(pi,"%d",quantity);
+  pi[quantity+3] = '\n';
+  return pi;
 }
 
+void writeResultInFile(int threadId, char* piDigits){
+  FILE* file;
+
+  char filename[20];
+  sprintf(filename,"ThreadNumber_%d",threadId);
+
+  file = fopen(filename,"a+");
+  if (file == NULL) {
+    printf("Erro ao criar o arquivo.\n");
+    return;
+  }
+  char* phraseToWrite = (char*)malloc(sizeof(char)*110);
+  sprintf(phraseToWrite,"Value of pi: %s \n",piDigits);
+  fputs(phraseToWrite,file);
+  free(phraseToWrite);
+  fclose(file);
+}
 
 void normalThreadRoutine(Requisition* requisition){
   Requisition requisitionNormal;
   requisitionNormal.delay = requisition->delay;
   requisitionNormal.quantity = requisition->quantity;
   requisitionNormal.i = requisition->i;
-  getPi(requisitionNormal.quantity);
+  
+  //getPi(requisitionNormal.quantity);
+
+
+  writeResultInFile(requisitionNormal.i,getPi(requisitionNormal.quantity));
+
+
   sleep(requisitionNormal.delay);
   requisition->arrayOfThreads[requisitionNormal.i] = 0;
 }
@@ -60,8 +87,15 @@ Requisition* readRequisitionFromCsv(FILE* file){
 void dispatcherRoutine(Threads* threads){
   int i =0;
   Requisition* requisition = (Requisition*)malloc(sizeof(Requisition));
+  
   FILE *file;
   file = fopen("test.txt","r");
+  if (file == NULL) {
+    printf("Erro ao criar o arquivo.\n");
+    return;
+  }
+
+
   while((requisition = readRequisitionFromCsv(file))!= NULL){
     while(*(threads->arrayOfThreads + i) == 1){
       i++;
