@@ -22,9 +22,14 @@ typedef struct _threads_
 {
   int* arrayOfThreads;
   pthread_t* normalthread;
+
 }Threads;
 
+typedef struct _normalThreadAttributes_
+{
+  int* threadPositionInArrayOfThreads;
 
+}normalThreadAttributes;
 
 char* getPi(int quantity){
   char* pi = (char*)malloc(sizeof(char)*quantity+3);
@@ -76,8 +81,7 @@ Requisition* readRequisitionFromCsv(FILE* file){
   char* token;
   if(fgets(row,10,file) == NULL){
     return NULL;
-  }
-  if(row == NULL) return NULL; 
+  } 
   requisition->quantity = atoi(strtok(row,","));
   requisition->delay = atoi(strtok(NULL,"\n"));
   return requisition;
