@@ -16,6 +16,16 @@ typedef struct _requisition_
 
 }Requisition;
 
+
+
+typedef struct _threads_
+{
+  int* arrayOfThreads;
+  pthread_t* normalthread;
+}Threads;
+
+
+
 void getPi(int quantity){
   printf("Quantity: %d\n", quantity);
 }
@@ -34,7 +44,7 @@ void normalThreadRoutine(Requisition* requisition){
 
 
 Requisition* readRequisitionFromCsv(FILE* file){
-  Requisition* requisition;
+  Requisition* requisition = (Requisition*)malloc(sizeof(Requisition));
   char row[10];
   char* token;
   if(fgets(row,10,file) == NULL){
@@ -47,13 +57,13 @@ Requisition* readRequisitionFromCsv(FILE* file){
 }
 
 
-void dispatcherRoutine(int* arrayOfThreads, pthread_t* normalthread){
+void dispatcherRoutine(Threads* threads){
   int i =0;
-  Requisition* requisition;
+  Requisition* requisition = (Requisition*)malloc(sizeof(Requisition));
   FILE *file;
   file = fopen("test.txt","r");
   while((requisition = readRequisitionFromCsv(file))!= NULL){
-    while(*(arrayOfThreads + i) == 1){
+    while(*(threads->arrayOfThreads + i) == 1){
       i++;
       if(i>=N){
         sleep(1);
@@ -61,9 +71,9 @@ void dispatcherRoutine(int* arrayOfThreads, pthread_t* normalthread){
       }
     }
     requisition->i = i;
-    requisition->arrayOfThreads = arrayOfThreads;
-    pthread_create(normalthread + i,NULL,(void*)normalThreadRoutine,requisition);
-    arrayOfThreads[i] = 1;
+    requisition->arrayOfThreads = threads->arrayOfThreads;
+    pthread_create((threads->normalthread + i),NULL,(void*)normalThreadRoutine,requisition);
+    threads->arrayOfThreads[i] = 1;
     sleep(temporeq);
     i=0;
   }
@@ -72,19 +82,18 @@ void dispatcherRoutine(int* arrayOfThreads, pthread_t* normalthread){
 }
 
 
-//Dispatcher lera do Csv e buscara alguma thread para executar a funcao,
 int main(){
-  int* arrayOfThreads = (int*)malloc(sizeof(int)*N);
-  pthread_t* normalthread =(pthread_t*)malloc(sizeof(pthread_t)*N);
+  Threads* threads = (Threads*)malloc(sizeof(Threads));
+  threads->arrayOfThreads = (int*)malloc(sizeof(int)*N);
+  threads->normalthread = (pthread_t*)malloc(sizeof(pthread_t)*N);
   pthread_t dispatcher;
 
-
-  pthread_create(&dispatcher,NULL,(void*)&dispatcherRoutine,(arrayOfThreads,normalthread));
+  pthread_create(&dispatcher,NULL,(void*)&dispatcherRoutine,threads);
   pthread_join(dispatcher,NULL);
 
-  
-  free(arrayOfThreads);
-  free(normalthread);
 
+  free(threads->arrayOfThreads);
+  free(threads->normalthread);
+  free(threads);
   return 0;
 }
