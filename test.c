@@ -5,7 +5,7 @@
 #include <string.h>
 #include "randomNumbersCsv.c"
 
-#define N 10
+#define N 100
 #define temporeq 0
 
 
@@ -45,8 +45,8 @@ char* getPi(int quantity){
 void writeResultInFile(NormalThreadAttributes* normalThreadAttributes, char* piDigits){
   FILE* file;
 
-  char filename[20];
-  sprintf(filename,"ThreadNumber_%d",normalThreadAttributes->threadId);
+  char filename[40];
+  sprintf(filename,"ThreadsOutput/ThreadNumber_%d",normalThreadAttributes->threadId);
 
   file = fopen(filename,"a+");
   if (file == NULL) {
@@ -66,7 +66,7 @@ void normalThreadRoutine(NormalThreadAttributes* normalThreadAttributes){
   char* pi = getPi(normalThreadAttributes->requisition.quantity);
   printf("%d\n",normalThreadAttributes->requisition.quantity);
   writeResultInFile(normalThreadAttributes,pi);
-  //sleep(normalThreadAttributes.requisition.delay);
+  
   *normalThreadAttributes->threadPositionInArrayOfThreads = 0;
   free(pi);
 }
@@ -115,15 +115,10 @@ void dispatcherRoutine(Threads* threads){
     workerAttributes->requisition.quantity = requisition->quantity;
     workerAttributes->threadId = i;
     workerAttributes->threadPositionInArrayOfThreads = threads->arrayOfThreads+i;
-    //normalThreadAttributes->requisition.delay = requisition->delay;
-    //normalThreadAttributes->requisition.quantity = requisition->quantity;
-    //normalThreadAttributes->threadId = i;
-    //normalThreadAttributes->threadPositionInArrayOfThreads = threads->arrayOfThreads+i;
     
     pthread_create((threads->normalthread + i),NULL,(void*)normalThreadRoutine,workerAttributes);
     threads->arrayOfThreads[i] = 1;
     usleep(temporeq);
-    i=0;
     free(requisition);
   }
   for(int j =0;j<N;j++){
