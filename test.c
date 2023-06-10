@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include<unistd.h>
 #include <string.h>
+#include "randomNumbersCsv.c"
 
-#define N 2
+#define N 10
 #define temporeq 0
 
 
@@ -52,7 +53,7 @@ void writeResultInFile(NormalThreadAttributes* normalThreadAttributes, char* piD
     printf("Erro ao criar o arquivo.\n");
     return;
   }
-  char* phraseToWrite = (char*)malloc(sizeof(char)*110);
+  char* phraseToWrite = (char*)malloc(sizeof(char)*210);
   sprintf(phraseToWrite,"%d,%d,%d,%s\n",normalThreadAttributes->howManyTimesThreadWorked,normalThreadAttributes->requisition.quantity,normalThreadAttributes->requisition.delay,piDigits);
   fputs(phraseToWrite,file);
   free(phraseToWrite);
@@ -130,16 +131,20 @@ void dispatcherRoutine(Threads* threads){
       pthread_join(threads->normalthread[j],NULL);
     }
   }
+  
   free(normalThreadAttributes);
   fclose(file);
+  
 }
 
 
-int main(){
+int main(int argc, char* argv[]){
   Threads* threads = (Threads*)malloc(sizeof(Threads));
   threads->arrayOfThreads = (int*)malloc(sizeof(int)*N);
   threads->normalthread = (pthread_t*)malloc(sizeof(pthread_t)*N);
   pthread_t dispatcher;
+
+  criarArquivoCSV( atoi(argv[1]));
 
   pthread_create(&dispatcher,NULL,(void*)&dispatcherRoutine,threads);
   pthread_join(dispatcher,NULL);

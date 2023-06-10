@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-void criarArquivoCSV(const char* nomeArquivo, int quantidadeRegistros) {
-    FILE* arquivo = fopen(nomeArquivo, "w");
+void criarArquivoCSV(int quantidadeRegistros) {
+    FILE* arquivo = fopen("dados.csv", "w");
     if (arquivo == NULL) {
         printf("Erro ao criar o arquivo.");
         return;
@@ -21,13 +21,4 @@ void criarArquivoCSV(const char* nomeArquivo, int quantidadeRegistros) {
 
     fclose(arquivo);
     printf("Arquivo CSV criado com sucesso.\n");
-}
-
-int main() {
-    const char* nomeArquivo = "dados.csv";
-    int quantidadeRegistros = 10;
-
-    criarArquivoCSV(nomeArquivo, quantidadeRegistros);
-
-    return 0;
 }
