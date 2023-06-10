@@ -55,7 +55,6 @@ void writeResultInFile(int threadId, char* piDigits){
   sprintf(phraseToWrite,"Value of pi: %s \n",piDigits);
   fputs(phraseToWrite,file);
   free(phraseToWrite);
-  free(piDigits);
   fclose(file);
 }
 
@@ -72,7 +71,8 @@ void normalThreadRoutine(NormalThreadAttributes* normalThreadAttributesPointer){
   writeResultInFile(normalThreadAttributes.threadId,pi);
   //sleep(normalThreadAttributes.requisition.delay);
   *normalThreadAttributes.threadPositionInArrayOfThreads = 0;
-  
+  free(pi);
+  printf("Debug %d\n",normalThreadAttributes.threadId);
 }
 
 
@@ -119,11 +119,13 @@ void dispatcherRoutine(Threads* threads){
     threads->arrayOfThreads[i] = 1;
     sleep(temporeq);
     i=0;
+    free(requisition);
   }
   for(int j =0;j<N;j++){
-    pthread_join(threads->normalthread[j],NULL);
+    if(threads->arrayOfThreads[j] == 1){
+      pthread_join(threads->normalthread[j],NULL);
+    }
   }
-  free(requisition);
   free(normalThreadAttributes);
   fclose(file);
 }
