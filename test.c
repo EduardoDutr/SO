@@ -4,15 +4,14 @@
 #include<unistd.h>
 #include <string.h>
 
-#define N 2
-#define temporeq 1
+#define N 100
+#define temporeq 0
+
 
 typedef struct _requisition_
 {
   int quantity;
   int delay;
-  int* arrayOfThreads;
-  int i;
 
 }Requisition;
 
@@ -28,8 +27,10 @@ typedef struct _threads_
 typedef struct _normalThreadAttributes_
 {
   int* threadPositionInArrayOfThreads;
+  Requisition requisition;
+  int threadId;
 
-}normalThreadAttributes;
+}NormalThreadAttributes;
 
 char* getPi(int quantity){
   char* pi = (char*)malloc(sizeof(char)*quantity+3);
@@ -54,23 +55,24 @@ void writeResultInFile(int threadId, char* piDigits){
   sprintf(phraseToWrite,"Value of pi: %s \n",piDigits);
   fputs(phraseToWrite,file);
   free(phraseToWrite);
+  free(piDigits);
   fclose(file);
 }
 
-void normalThreadRoutine(Requisition* requisition){
-  Requisition requisitionNormal;
-  requisitionNormal.delay = requisition->delay;
-  requisitionNormal.quantity = requisition->quantity;
-  requisitionNormal.i = requisition->i;
+void normalThreadRoutine(NormalThreadAttributes* normalThreadAttributesPointer){
+  NormalThreadAttributes normalThreadAttributes;
+  normalThreadAttributes.requisition.delay = normalThreadAttributesPointer->requisition.delay;
+  normalThreadAttributes.requisition.quantity = normalThreadAttributesPointer->requisition.quantity;
+  normalThreadAttributes.threadId = normalThreadAttributesPointer->threadId;
+  normalThreadAttributes.threadPositionInArrayOfThreads = normalThreadAttributesPointer->threadPositionInArrayOfThreads;
   
-  //getPi(requisitionNormal.quantity);
-
-
-  writeResultInFile(requisitionNormal.i,getPi(requisitionNormal.quantity));
-
-
-  sleep(requisitionNormal.delay);
-  requisition->arrayOfThreads[requisitionNormal.i] = 0;
+  sleep(normalThreadAttributes.requisition.delay);
+  printf("%d\n",normalThreadAttributes.requisition.quantity);
+  char* pi = getPi(normalThreadAttributes.requisition.quantity);
+  writeResultInFile(normalThreadAttributes.threadId,pi);
+  //sleep(normalThreadAttributes.requisition.delay);
+  *normalThreadAttributes.threadPositionInArrayOfThreads = 0;
+  
 }
 
 
@@ -90,8 +92,8 @@ Requisition* readRequisitionFromCsv(FILE* file){
 
 void dispatcherRoutine(Threads* threads){
   int i =0;
-  Requisition* requisition = (Requisition*)malloc(sizeof(Requisition));
-  
+  Requisition* requisition;
+  NormalThreadAttributes* normalThreadAttributes = (NormalThreadAttributes*)malloc(sizeof(NormalThreadAttributes));
   FILE *file;
   file = fopen("test.txt","r");
   if (file == NULL) {
@@ -108,14 +110,21 @@ void dispatcherRoutine(Threads* threads){
         i=0;
       }
     }
-    requisition->i = i;
-    requisition->arrayOfThreads = threads->arrayOfThreads;
-    pthread_create((threads->normalthread + i),NULL,(void*)normalThreadRoutine,requisition);
+    normalThreadAttributes->requisition.delay = requisition->delay;
+    normalThreadAttributes->requisition.quantity = requisition->quantity;
+    normalThreadAttributes->threadId = i;
+    normalThreadAttributes->threadPositionInArrayOfThreads = threads->arrayOfThreads+i;
+    
+    pthread_create((threads->normalthread + i),NULL,(void*)normalThreadRoutine,normalThreadAttributes);
     threads->arrayOfThreads[i] = 1;
     sleep(temporeq);
     i=0;
   }
-  
+  for(int j =0;j<N;j++){
+    pthread_join(threads->normalthread[j],NULL);
+  }
+  free(requisition);
+  free(normalThreadAttributes);
   fclose(file);
 }
 
