@@ -4,7 +4,7 @@
 #include<unistd.h>
 #include <string.h>
 
-#define N 100
+#define N 2
 #define temporeq 0
 
 
@@ -29,6 +29,7 @@ typedef struct _normalThreadAttributes_
   int* threadPositionInArrayOfThreads;
   Requisition requisition;
   int threadId;
+  int howManyTimesThreadWorked;
 
 }NormalThreadAttributes;
 
@@ -40,11 +41,11 @@ char* getPi(int quantity){
   return pi;
 }
 
-void writeResultInFile(int threadId, char* piDigits){
+void writeResultInFile(NormalThreadAttributes* normalThreadAttributes, char* piDigits){
   FILE* file;
 
   char filename[20];
-  sprintf(filename,"ThreadNumber_%d",threadId);
+  sprintf(filename,"ThreadNumber_%d",normalThreadAttributes->threadId);
 
   file = fopen(filename,"a+");
   if (file == NULL) {
@@ -52,27 +53,21 @@ void writeResultInFile(int threadId, char* piDigits){
     return;
   }
   char* phraseToWrite = (char*)malloc(sizeof(char)*110);
-  sprintf(phraseToWrite,"Value of pi: %s \n",piDigits);
+  sprintf(phraseToWrite,"%d,%d,%d,%s\n",normalThreadAttributes->howManyTimesThreadWorked,normalThreadAttributes->requisition.quantity,normalThreadAttributes->requisition.delay,piDigits);
   fputs(phraseToWrite,file);
   free(phraseToWrite);
   fclose(file);
 }
 
-void normalThreadRoutine(NormalThreadAttributes* normalThreadAttributesPointer){
-  NormalThreadAttributes normalThreadAttributes;
-  normalThreadAttributes.requisition.delay = normalThreadAttributesPointer->requisition.delay;
-  normalThreadAttributes.requisition.quantity = normalThreadAttributesPointer->requisition.quantity;
-  normalThreadAttributes.threadId = normalThreadAttributesPointer->threadId;
-  normalThreadAttributes.threadPositionInArrayOfThreads = normalThreadAttributesPointer->threadPositionInArrayOfThreads;
-  
-  sleep(normalThreadAttributes.requisition.delay);
-  printf("%d\n",normalThreadAttributes.requisition.quantity);
-  char* pi = getPi(normalThreadAttributes.requisition.quantity);
-  writeResultInFile(normalThreadAttributes.threadId,pi);
+void normalThreadRoutine(NormalThreadAttributes* normalThreadAttributes){
+  normalThreadAttributes->howManyTimesThreadWorked = normalThreadAttributes->howManyTimesThreadWorked +1;
+  usleep(normalThreadAttributes->requisition.delay);
+  char* pi = getPi(normalThreadAttributes->requisition.quantity);
+  printf("%d\n",normalThreadAttributes->requisition.quantity);
+  writeResultInFile(normalThreadAttributes,pi);
   //sleep(normalThreadAttributes.requisition.delay);
-  *normalThreadAttributes.threadPositionInArrayOfThreads = 0;
+  *normalThreadAttributes->threadPositionInArrayOfThreads = 0;
   free(pi);
-  printf("Debug %d\n",normalThreadAttributes.threadId);
 }
 
 
@@ -93,9 +88,13 @@ Requisition* readRequisitionFromCsv(FILE* file){
 void dispatcherRoutine(Threads* threads){
   int i =0;
   Requisition* requisition;
-  NormalThreadAttributes* normalThreadAttributes = (NormalThreadAttributes*)malloc(sizeof(NormalThreadAttributes));
+  NormalThreadAttributes* normalThreadAttributes = (NormalThreadAttributes*)malloc(sizeof(NormalThreadAttributes)*N);
+  for(int k =0;k<N;k++){
+    (normalThreadAttributes+i)->howManyTimesThreadWorked = 0;
+  }
+  NormalThreadAttributes* workerAttributes;
   FILE *file;
-  file = fopen("test.txt","r");
+  file = fopen("dados.csv","r");
   if (file == NULL) {
     printf("Erro ao criar o arquivo.\n");
     return;
@@ -110,14 +109,19 @@ void dispatcherRoutine(Threads* threads){
         i=0;
       }
     }
-    normalThreadAttributes->requisition.delay = requisition->delay;
-    normalThreadAttributes->requisition.quantity = requisition->quantity;
-    normalThreadAttributes->threadId = i;
-    normalThreadAttributes->threadPositionInArrayOfThreads = threads->arrayOfThreads+i;
+    workerAttributes = normalThreadAttributes + i;
+    workerAttributes->requisition.delay = requisition->delay;
+    workerAttributes->requisition.quantity = requisition->quantity;
+    workerAttributes->threadId = i;
+    workerAttributes->threadPositionInArrayOfThreads = threads->arrayOfThreads+i;
+    //normalThreadAttributes->requisition.delay = requisition->delay;
+    //normalThreadAttributes->requisition.quantity = requisition->quantity;
+    //normalThreadAttributes->threadId = i;
+    //normalThreadAttributes->threadPositionInArrayOfThreads = threads->arrayOfThreads+i;
     
-    pthread_create((threads->normalthread + i),NULL,(void*)normalThreadRoutine,normalThreadAttributes);
+    pthread_create((threads->normalthread + i),NULL,(void*)normalThreadRoutine,workerAttributes);
     threads->arrayOfThreads[i] = 1;
-    sleep(temporeq);
+    usleep(temporeq);
     i=0;
     free(requisition);
   }
