@@ -3,5 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <mpfr.h>
 char* getPi(int quantity);
 #endif

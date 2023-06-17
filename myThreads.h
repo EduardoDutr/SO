@@ -5,9 +5,6 @@
 #include <pthread.h>
 #define N 10
 #define temporeq 0.0
-// Declaração avançada da estrutura Requisition
-struct _requisition_;
-typedef struct _requisition_ Requisition;
 
 #include "csvParser.h"
 

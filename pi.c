@@ -1,9 +1,14 @@
 #include "pi.h"
 
-char* getPi(int quantity){
-  char* pi = (char*)malloc(sizeof(char)*quantity+3);
-  //quantity+3 pois consideramos '3' ',' e '\n'
-  sprintf(pi,"%d",quantity);
-  pi[quantity+3] = '\n';
-  return pi;
+char* getPi(int digits) {
+    mpfr_t pi;
+    mpfr_prec_t precision = digits * 3.34;
+    mpfr_init2(pi, precision);
+    mpfr_const_pi(pi, MPFR_RNDN);
+
+    char* pi_str = (char*) malloc((digits + 3) * sizeof(char));
+    mpfr_sprintf(pi_str, "%.*Rf", digits, pi);
+
+    mpfr_clear(pi);
+    return pi_str;
 }

@@ -14,11 +14,11 @@ int readRequisitionFromCsv(FILE* file, Requisition* requisition){
 }
 
 
-void writeResultInFile(NormalThreadAttributes* normalThreadAttributes, char* piDigits){
+void writeResultInFile(int id, int howManyTimesThreadWorked, int quantity, int delay, char* piDigits){
   FILE* file;
 
   char filename[40];
-  sprintf(filename,"ThreadsOutput/ThreadNumber_%d",normalThreadAttributes->threadId);
+  sprintf(filename,"ThreadsOutput/ThreadNumber_%d",id);
   file = fopen(filename,"a+");
   if (file == NULL) {
     printf("Erro ao criar o arquivo.\n");
@@ -26,7 +26,7 @@ void writeResultInFile(NormalThreadAttributes* normalThreadAttributes, char* piD
   }
   //printf("%d\n",normalThreadAttributes->requisition.quantity);
   char* phraseToWrite = (char*)malloc(sizeof(char)*210);
-  sprintf(phraseToWrite,"%d,%d,%d,%s\n",normalThreadAttributes->howManyTimesThreadWorked,normalThreadAttributes->requisition.quantity,normalThreadAttributes->requisition.delay,piDigits);
+  sprintf(phraseToWrite,"%d,%d,%d,%s\n",howManyTimesThreadWorked,quantity,delay,piDigits);
   fputs(phraseToWrite,file);
   free(phraseToWrite);
   fclose(file);
